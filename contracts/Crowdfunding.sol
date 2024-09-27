@@ -9,7 +9,6 @@ contract Crowdfunding{
     string public nazivProjekta;
     string public opisProjekta;
     uint public rokProjekta;
-    bool public zavrsen;
 
     mapping (address=>uint) individualniDoprinosi;
 
@@ -21,7 +20,6 @@ contract Crowdfunding{
         trenutnaSuma = 0;
         nazivProjekta = naziv;
         opisProjekta = opis;
-        zavrsen = false;
         rokProjekta = block.timestamp + rok;
     }
 
@@ -29,27 +27,17 @@ contract Crowdfunding{
         if(msg.value<=0){
             revert("Ne mozete uplatiti iznos manji od nule.");
         }
-        if(zavrsen){
+        if(block.timestamp>rokProjekta || trenutnaSuma>=potrebnaSuma){
             revert("Donacije su zavrsene.");
-        }
-        if(block.timestamp>rokProjekta){
-            revert("Prosao je rok za donacije.");
         }
         individualniDoprinosi[msg.sender] += msg.value;
         trenutnaSuma += msg.value;
-        if(trenutnaSuma+msg.value < potrebnaSuma){
-            emit EvidencijaUplate(msg.sender, msg.value, trenutnaSuma);
-            vlasnikKampanje.transfer(msg.value);
-        }
-        if(trenutnaSuma+msg.value >= potrebnaSuma){
-            emit EvidencijaUplate(msg.sender, msg.value, trenutnaSuma);
-            zavrsen = true;
-            vlasnikKampanje.transfer(msg.value);
-        }
-        // if(trenutnaSuma+msg.value > potrebnaSuma){
-        //     emit EvidencijaUplate(msg.sender, potrebnaSuma - trenutnaSuma, trenutnaSuma);
-        //     zavrsen = true;
-        //     payable (msg.sender).transfer(trenutnaSuma+msg.value - potrebnaSuma);
-        // }
+        emit EvidencijaUplate(msg.sender, msg.value, trenutnaSuma);
+        vlasnikKampanje.transfer(msg.value);
     }
+
+    function istorijaDonacija() external view returns(uint){
+        return individualniDoprinosi[msg.sender];
+    }
+ 
 }
